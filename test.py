@@ -2,8 +2,8 @@
 to make sure all errors and valid input correct."""
 
 import unittest
-import multiprocessing as mp
 import subprocess as sp
+import sys
 import zmq
 
 #Setup socket, other data
@@ -13,11 +13,8 @@ socket = context.socket(zmq.REQ)
 socket.connect("tcp://localhost:5561")
 
 #run datefetch as subprocess
-def run_df():
-    sp.run(["python3", "./date_fetch.py"])
-
-df = mp.Process(target=run_df)
-df.start()
+# Run Date Fetcher as a subprocess
+df = sp.Popen([sys.executable, "date_fetch.py"])
 
 class Test_Df(unittest.TestCase):
 
@@ -60,7 +57,7 @@ class Test_Df(unittest.TestCase):
     ## Verify all input formats working
     def test_daymonthyearshort_in(self):
         request = {
-            "date": "Tue, Nov 11, 2026",
+            "date": "Wed, Nov 11, 2026",
             "input_format": "%a, %b %d, %Y",
             "output_format": "%m/%d/%y"
         }
@@ -179,6 +176,6 @@ class Test_Df(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
-    df.join()
+    unittest.main(exit=False)
+    df.wait()
     socket.close()
