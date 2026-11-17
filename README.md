@@ -7,7 +7,9 @@ will take an input date and output the same date in the desired format.
 
 ## Installation
 
-Navigate into the directory containing date_fecth.py and execute the following:
+Navigate into the directory containing `date_fetch.py`.
+
+### Windows (PowerShell)
 
 ~~~text
 python -m venv .venv
@@ -15,26 +17,30 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 ~~~
 
+### macOS / Linux
+
+~~~bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+~~~
+
+
 ## Setup and Sending Requests
 
 ~~~python
-import multiprocessing as mp
+
 import subprocess as sp
-import json
+import sys
 import zmq
 
-#Setup socket, other data
+# Set up ZeroMQ socket
 context = zmq.Context()
-
 socket = context.socket(zmq.REQ)
 socket.connect("tcp://localhost:5561")
 
-#run datefetch as subprocess
-def run_df():
-    sp.run(["python3", "./date_fetch.py"])
-
-df = mp.Process(target=run_df)
-df.start()
+# Start Date Fetcher as a subprocess
+df = sp.Popen([sys.executable, "date_fetch.py"])
 
 ~~~
 
@@ -45,7 +51,7 @@ Properly formatted input contains three keys:
 
 {
     "date": "date_to_format",
-    "input_format": "format_of_given_date",\
+    "input_format": "format_of_given_date",
     "output_format": "format_to_return_with"
 }
 
@@ -109,12 +115,18 @@ told to end.
 To end date_fetch, send the following:
 
 ~~~python
+
 request = {
     "end": True
 }
-socket.send_json(request)
 
-df.join()
+socket.send_json(request)
+response = socket.recv_json()
+
+df.wait()
+socket.close()
+context.term()
+
 ~~~
 
 This will prevent date_fetch from continuing to run when not wanted.
